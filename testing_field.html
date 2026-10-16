@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <title>Autoclicker testing page</title>
+    </head>
+    <script>
+        let count = 0;
+        const counter_add = () => {
+            console.log("fired")
+            count++;
+            document.getElementById("counter-text").innerText = "You have clicked " + count + " times.";
+        }
+    </script>
+    <div onclick="counter_add()" style="height: 200px; width: 400px; color: blue; background-color: grey"; >
+        Click here
+    </div>
+    <div id="counter-text">
+        You have clicked 0 times.
+    </div>
+</html>
