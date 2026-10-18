@@ -2,7 +2,6 @@ import customtkinter as ctk
 from pynput.keyboard import Key, KeyCode
 from data.autoclicker_config import AutoClickerConfig
 
-
 class Settings(ctk.CTkFrame):
     def __init__(self, master, get_config, config_change):
         super().__init__(master)
@@ -20,7 +19,6 @@ class Settings(ctk.CTkFrame):
             ("Play Macro", "play_macro_hotkey"),
             ("Delete Macro", "delete_macro_hotkey"),
         ]:
-            print(f"Constructing setting overlay for {hotkey_name} with current hotkey: {getattr(self.get_config(), hotkey_attr)}")
             self.construct_setting_overlay(hotkey_name, hotkey_attr, getattr(self.get_config(), hotkey_attr))
 
         self.save_button = ctk.CTkButton(

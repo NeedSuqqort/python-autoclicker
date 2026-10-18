@@ -1,0 +1,8 @@
+{
+    "delay": 1.0,
+    "toggle_hotkey": "s",
+    "start_record_hotkey": "u",
+    "stop_record_hotkey": "f",
+    "play_macro_hotkey": "a",
+    "delete_macro_hotkey": "j"
+}

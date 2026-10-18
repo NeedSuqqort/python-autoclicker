@@ -3,21 +3,16 @@ import time
 import customtkinter as ctk
 from pynput.mouse import Button, Controller
 from pynput.keyboard import Listener, Key, KeyCode
-from dotenv import load_dotenv
+from helper import load_settings
 from dataclasses import dataclass
-from macro import MacroApp 
-from autoclicker import AutoClicker
-from settings import Settings
+from models.macro import MacroApp 
+from models.autoclicker import AutoClicker
+from models.settings import Settings
 from data.autoclicker_config import AutoClickerConfig
-import os
-
+import json
 
 ctk.set_appearance_mode("System")  # "System", "Dark", "Light"
 ctk.set_default_color_theme("blue")  # "blue", "green", "dark-blue"
-
-load_dotenv()  # Load environment variables from .env file
-DELAY_DEFAULT = float(os.getenv("delay",1.0))
-TOGGLE_HOTKEY = os.getenv("toggle_hotkey", "s")  
 
 class App:
     def __init__(self):
@@ -30,7 +25,7 @@ class App:
         self.root.grid_columnconfigure(1, weight=1)
         self.nav_bar = ctk.CTkFrame(self.root,width=120,corner_radius=0)
         self.nav_bar.grid(row=0, column=0, sticky="ns")
-        self.config = AutoClickerConfig(DELAY_DEFAULT, KeyCode(char=TOGGLE_HOTKEY))
+        self.config = load_settings()
         self.current_page = None
 
         ctk.CTkLabel(
@@ -66,14 +61,14 @@ class App:
 
         self.autoclicker = AutoClicker(self.content_frame, self.get_config)
         self.settings = Settings(self.content_frame, self.get_config, self.config_change)
-        self.macro = MacroApp(self.content_frame)
+        self.macro = MacroApp(self.content_frame, self.config)
 
         self.pages = {
             "autoclicker": self.autoclicker,
             "settings": self.settings,
             "macro": self.macro
         }
-
+    
         # display the autoclicker page by default
         self.show_page("autoclicker")
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -109,12 +104,13 @@ class App:
         return self.config
 
     def save_config(self):
-        with open(".env", "w") as f:
+        with open("saves/settings.json", "w") as f:
             for key, value in self.config.__dict__.items():
+                if isinstance(value, Key):
+                    self.config.__dict__[key] = f"Key.{value.name}"
                 if isinstance(value, KeyCode):
-                    f.write(f"{key.upper()}={value.char}\n")
-                else:
-                    f.write(f"{key.upper()}={value}\n")
+                    self.config.__dict__[key] = value.char
+            json.dump(self.config.__dict__, f, indent=4)
         
     def on_close(self):
         for page in self.pages.values():

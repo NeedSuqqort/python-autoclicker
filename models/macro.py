@@ -8,23 +8,26 @@ from pynput import keyboard, mouse
 from pynput.keyboard import Controller as KeyboardController
 from pynput.keyboard import Key, KeyCode
 from pynput.mouse import Button, Controller as MouseController
-
+from data.keymap import pynput_to_tkinter
 
 class MacroApp(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, config):
         super().__init__(master, corner_radius=12)
         self.macros = []
         self.current = []
-        self.save_path = Path(__file__).with_name("macros.json")
+        self.save_path = Path(__file__).parent.parent / "saves" / "macros.json"
         self.prev = time.time()
         self.recording = False
+        self.is_playing = False
         self.recording_name = ""
         self.mouse_listener = None
         self.keyboard_listener = None
         self.event_lock = threading.Lock()
         self.mouse_controller = MouseController()
         self.keyboard_controller = KeyboardController()
+        self.config = config
         self.macro_options = {}
+        self.hotkey_bindings = []
 
         self.ui_init()
         try:
@@ -154,7 +157,8 @@ class MacroApp(ctk.CTkFrame):
 
     def start_recording(self):
         if self.recording:
-            return
+            self.stop_recording()
+            return 
 
         self.recording_name = self.name_entry.get().strip()
         if not self.recording_name:
@@ -191,6 +195,7 @@ class MacroApp(ctk.CTkFrame):
 
     def stop_recording(self):
         if not self.recording:
+            self.status_label.configure(text="Not currently recording.", text_color="gray")
             return
 
         self.recording = False
@@ -297,6 +302,7 @@ class MacroApp(ctk.CTkFrame):
 
     def load_macro(self):
         if not self.save_path.exists():
+            print("Macro file not found, starting with empty macro list.")
             return []
         with self.save_path.open("r", encoding="utf-8") as file:
             saved_macros = json.load(file)
@@ -390,6 +396,39 @@ class MacroApp(ctk.CTkFrame):
 
     def on_release(self, key):
         self.append_event(type="key_up", key=key)
+
+
+    def on_enter(self):
+        if self.recording:
+            self.stop_recording()
+
+        window = self.winfo_toplevel()
+        hotkeys = (
+            (self.config.start_record_hotkey, self.start_recording),
+            (self.config.stop_record_hotkey, self.stop_recording),
+            (self.config.play_macro_hotkey, self.play_selected),
+            (self.config.delete_macro_hotkey, self.delete_selected),
+        )
+
+        for hotkey, callback in hotkeys:
+            sequence = f"<KeyPress-{pynput_to_tkinter(hotkey)}>"
+
+            def handle_hotkey(_event, command=callback):
+                command()
+                return "break"
+
+            binding_id = window.bind(sequence, handle_hotkey, add="+")
+            self.hotkey_bindings.append((sequence, binding_id))
+
+    def on_exit(self):
+        if self.recording:
+            self.stop_recording()
+        self.recording = False
+
+        window = self.winfo_toplevel()
+        for sequence, binding_id in self.hotkey_bindings:
+            window.unbind(sequence, binding_id)
+        self.hotkey_bindings.clear()
 
 
 if __name__ == "__main__":

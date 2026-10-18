@@ -3,10 +3,7 @@ import time
 from pynput.mouse import Button, Controller
 from pynput.keyboard import Listener, KeyCode
 import threading
-from dotenv import load_dotenv
-import os
 
-load_dotenv()  # Load environment variables from .env file
 class AutoClicker(ctk.CTkFrame):
     def __init__(self, master, get_config):
         super().__init__(master)
