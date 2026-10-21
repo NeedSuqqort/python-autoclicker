@@ -18,10 +18,10 @@ class MacroApp(ctk.CTkFrame):
         self.save_path = Path(__file__).parent.parent / "saves" / "macros.json"
         self.prev = time.time()
         self.recording = False
-        self.is_playing = False
         self.recording_name = ""
         self.mouse_listener = None
         self.keyboard_listener = None
+        self.playing_lock = threading.Lock()
         self.event_lock = threading.Lock()
         self.mouse_controller = MouseController()
         self.keyboard_controller = KeyboardController()
@@ -317,15 +317,22 @@ class MacroApp(ctk.CTkFrame):
         if index is None or self.recording:
             return
 
+        if not self.playing_lock.acquire(blocking=False):
+            self.set_status("A replay is in progress. Please wait until it is finished.", "gray")
+            return
+
+        self.is_playing = True
         events = self.macros[index].get("events", [])
         self.play_button.configure(state="disabled")
         self.record_button.configure(state="disabled")
+
         self.set_status("Playing macro…", "#2980b9")
         threading.Thread(
             target=self.run_macro,
             args=(events,),
             daemon=True,
         ).start()
+
         self.play_button.configure(state="normal")
         self.record_button.configure(state="normal")
 
@@ -339,6 +346,8 @@ class MacroApp(ctk.CTkFrame):
         else:
             message = "Playback complete."
             color = "green"
+        finally:
+            self.playing_lock.release()
         self.after(0, self.play_button.configure, {"state": "normal"})
         self.after(0, self.set_status, message, color)
 
