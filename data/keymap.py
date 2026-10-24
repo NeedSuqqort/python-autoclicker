@@ -38,6 +38,26 @@ PYNPUT_TO_TKINTER = {
     "num_lock": "Num_Lock",
 }
 
+SPECIAL_KEYS = {
+    "escape": Key.esc,
+    "shift_l": Key.shift,
+    "shift_r": Key.shift,
+    "control_l": Key.ctrl,
+    "control_r": Key.ctrl,
+    "return": Key.enter,
+    "alt_l": Key.alt,
+    "alt_r": Key.alt,
+    "space": Key.space,
+    "tab": Key.tab,
+    "return": Key.enter,
+    "backspace": Key.backspace,
+    "delete": Key.delete,
+    "left": Key.left,
+    "right": Key.right,
+    "up": Key.up,
+    "down": Key.down,
+}
+
 def pynput_to_tkinter(key: Key | KeyCode) -> str:
     if isinstance(key, Key):
         name = PYNPUT_TO_TKINTER.get(key.name, key.name)

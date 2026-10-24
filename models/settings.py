@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from pynput.keyboard import Key, KeyCode
-from data.autoclicker_config import AutoClickerConfig
+from data.keymap import SPECIAL_KEYS
 
 class Settings(ctk.CTkFrame):
     def __init__(self, master, get_config, config_change):
@@ -46,13 +46,17 @@ class Settings(ctk.CTkFrame):
                 row,
                 placeholder_text="Press one key",
                 width=40,
-                height=40,
+                height=40,    
+                border_color="#cccccc", 
+                fg_color=("white", "#2b2b2b"),
                 state="readonly",
             )
             entry.pack(side="right", fill="x", expand=True)
             self.selected_hotkey = current_hotkey if current_hotkey is not None else self.get_config().toggle_hotkey
             self._display_hotkey(entry, self.selected_hotkey)
             entry.bind("<KeyPress>", lambda e, attr=attr: self._capture_hotkey(attr, e))
+            entry.bind("<FocusIn>", lambda e, attr=attr, entry=entry: self._on_focus(attr, entry))
+            entry.bind("<FocusOut>", lambda e, attr=attr, entry=entry: self._on_blur(attr, entry))
 
             setattr(self, f"{attr}_label", label)  
             setattr(self, f"{attr}_entry", entry)  
@@ -70,33 +74,26 @@ class Settings(ctk.CTkFrame):
         component.insert(0, display)
         component.configure(state="readonly")
 
+    def _on_focus(self, attr, event):
+        event.configure(
+            border_color="#0ea4df",        
+        )
+
+    def _on_blur(self, attr, event):
+        event.configure(
+            border_color="#cccccc",
+            fg_color=("white", "#2b2b2b")
+        )
+
     def _capture_hotkey(self, attr, event):
-        special_keys = {
-            "escape": Key.esc,
-            "shift_l": Key.shift,
-            "shift_r": Key.shift,
-            "control_l": Key.ctrl,
-            "control_r": Key.ctrl,
-            "alt_l": Key.alt,
-            "alt_r": Key.alt,
-            "space": Key.space,
-            "tab": Key.tab,
-            "return": Key.enter,
-            "backspace": Key.backspace,
-            "delete": Key.delete,
-            "left": Key.left,
-            "right": Key.right,
-            "up": Key.up,
-            "down": Key.down,
-        }
         keysym = event.keysym.lower()
-        if keysym in special_keys:
-            self.selected_hotkey = special_keys[keysym]
+        if keysym in SPECIAL_KEYS:
+            self.selected_hotkey = SPECIAL_KEYS[keysym]
         elif len(event.char) == 1:
             self.selected_hotkey = KeyCode.from_char(event.char)
         else:
             return "break"
         
-        setattr(self.current_settings, attr, self.get_hotkey_display(self.selected_hotkey))
+        setattr(self.current_settings, attr, self.selected_hotkey)
         self._display_hotkey(getattr(self, f"{attr}_entry"), self.selected_hotkey)
         return "break"

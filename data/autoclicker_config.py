@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pynput.keyboard import Key, KeyCode
+from pynput.mouse import Button
 
 @dataclass
 class AutoClickerConfig:
@@ -9,3 +10,4 @@ class AutoClickerConfig:
     stop_record_hotkey: Key | KeyCode = Key.f10
     play_macro_hotkey: Key | KeyCode = Key.f11
     delete_macro_hotkey: Key | KeyCode = Key.f12
+    autoclicker_repeat_key: Button = Button.left

@@ -59,7 +59,7 @@ class App:
         self.content_frame = ctk.CTkFrame(self.root, corner_radius=0, fg_color="transparent")
         self.content_frame.grid(row=0, column=1, sticky="nsew")
 
-        self.autoclicker = AutoClicker(self.content_frame, self.get_config)
+        self.autoclicker = AutoClicker(self.content_frame, self.get_config, self.config_change)
         self.settings = Settings(self.content_frame, self.get_config, self.config_change)
         self.macro = MacroApp(self.content_frame, self.config)
 
@@ -110,6 +110,8 @@ class App:
                     self.config.__dict__[key] = f"Key.{value.name}"
                 if isinstance(value, KeyCode):
                     self.config.__dict__[key] = value.char
+                if isinstance(value, Button):
+                    self.config.__dict__[key] = f"Button.{value.name}"
             json.dump(self.config.__dict__, f, indent=4)
         
     def on_close(self):

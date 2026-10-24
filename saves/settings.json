@@ -1,8 +1,9 @@
 {
-    "delay": 1.0,
-    "toggle_hotkey": "s",
+    "delay": 0.03,
+    "toggle_hotkey": "Key.enter",
     "start_record_hotkey": "u",
     "stop_record_hotkey": "f",
-    "play_macro_hotkey": "a",
-    "delete_macro_hotkey": "j"
+    "play_macro_hotkey": "Return",
+    "delete_macro_hotkey": "Delete",
+    "autoclicker_repeat_key": "Button.left"
 }
