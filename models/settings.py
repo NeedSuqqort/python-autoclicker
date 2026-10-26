@@ -2,6 +2,10 @@ import customtkinter as ctk
 from pynput.keyboard import Key, KeyCode
 from data.keymap import SPECIAL_KEYS
 
+RED = "#ff0000"
+ON_FOCUS = "#0ea4df"
+NORMAL = "#cccccc"
+
 class Settings(ctk.CTkFrame):
     def __init__(self, master, get_config, config_change):
         super().__init__(master)
@@ -74,16 +78,27 @@ class Settings(ctk.CTkFrame):
         component.insert(0, display)
         component.configure(state="readonly")
 
+    def _set_border_color(self, object, color):
+        try:
+            object.configure(border_color=color)
+        except Exception as e:
+            print(f"Failed to apply settings: {e}")
+
     def _on_focus(self, attr, event):
-        event.configure(
-            border_color="#0ea4df",        
-        )
+        self._set_border_color(event, ON_FOCUS)
 
     def _on_blur(self, attr, event):
+        self._set_border_color(event, NORMAL)
         event.configure(
-            border_color="#cccccc",
             fg_color=("white", "#2b2b2b")
         )
+
+    def check_duplicates(self, new_key):
+        config = self.get_config()
+        for key, value in config.__dict__.items():
+            if value == new_key:
+                return key
+        return None
 
     def _capture_hotkey(self, attr, event):
         keysym = event.keysym.lower()
@@ -93,7 +108,18 @@ class Settings(ctk.CTkFrame):
             self.selected_hotkey = KeyCode.from_char(event.char)
         else:
             return "break"
-        
+
+        duplicate_hotkey = self.check_duplicates(self.selected_hotkey)
+
+        if duplicate_hotkey:
+            self._set_border_color(getattr(self, f"{attr}_entry"), RED)
+            self._set_border_color(getattr(self, f"{duplicate_hotkey}_entry"), RED)
+        else:
+            for key, value in self.__dict__.items():
+                if key.endswith("_entry"):
+                    color = "#cccccc" if key != f"{attr}_entry" else "#0ea4df"
+                    self._set_border_color(getattr(self, key), color)
+                    
         setattr(self.current_settings, attr, self.selected_hotkey)
         self._display_hotkey(getattr(self, f"{attr}_entry"), self.selected_hotkey)
         return "break"
