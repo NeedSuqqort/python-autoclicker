@@ -1,6 +1,7 @@
 # Python Auto Clicker
 
-A desktop autoclicker with a graphical interface, configurable hotkeys, and a macro recorder for mouse and keyboard actions.
+A desktop autoclicker with a graphical interface, configurable hotkeys, and a macro recorder for mouse and keyboard actions. **_UI update is in progress, Sorry!_**
+
 
 ## Requirements
 
