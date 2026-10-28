@@ -1,3 +1,5 @@
-macros.json
+*.json
 __pycache__/
-saves/settings.json
+settings.json
+uv.lock
+*.egg-info
