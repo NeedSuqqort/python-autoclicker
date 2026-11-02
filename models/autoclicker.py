@@ -17,6 +17,14 @@ class AutoClicker(ctk.CTkFrame):
         self.get_config = get_config
         self.set_config = set_config
 
+        # Title
+        ctk.CTkLabel(
+            self,
+            text="Autoclicker",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            fg_color="transparent",
+        ).pack(fill="x",padx=24, pady=(24, 6))
+
         # Widgets
         self.delay_label = ctk.CTkLabel(
             self,
@@ -43,10 +51,10 @@ class AutoClicker(ctk.CTkFrame):
             self,
             text="Start",
             command=self.toggle_clicking,
-            width=300,
+            width=50,
             height=40
         )
-        self.toggle_button.pack(fill="x", padx=20, pady=10)
+        self.toggle_button.pack(fill="x", padx=100, pady=10)
         self.toggle_listener.start()
 
         self.click_label = ctk.CTkLabel(

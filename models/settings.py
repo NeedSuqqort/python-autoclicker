@@ -16,6 +16,14 @@ class Settings(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
+        ctk.CTkLabel(
+            self,
+            text="Settings",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            fg_color="transparent",
+            anchor="w"
+        ).pack(fill="x",padx=24, pady=(24, 6))
+
         for hotkey_name, hotkey_attr in [
             ("Toggle Autoclicker", "toggle_hotkey"),
             ("Start Record Macro", "start_record_hotkey"),
@@ -39,23 +47,22 @@ class Settings(ctk.CTkFrame):
             row = ctk.CTkFrame(self)
             row.pack(fill="x", padx=20, pady=5)
             row.grid_columnconfigure(1, weight=1)
-
+            row.configure(fg_color="transparent")
             label = ctk.CTkLabel(
                 row,
                 text=text,
             )
-            label.pack(side="left", padx=(0, 10))
-
+            label.pack(side="left", padx=(5, 5))
             entry = ctk.CTkEntry(
                 row,
                 placeholder_text="Press one key",
-                width=40,
+                width=60,
                 height=40,    
                 border_color="#cccccc", 
                 fg_color=("white", "#2b2b2b"),
                 state="readonly",
             )
-            entry.pack(side="right", fill="x", expand=True)
+            entry.pack(side="right")
             self.selected_hotkey = current_hotkey if current_hotkey is not None else self.get_config().toggle_hotkey
             self._display_hotkey(entry, self.selected_hotkey)
             entry.bind("<KeyPress>", lambda e, attr=attr: self._capture_hotkey(attr, e))

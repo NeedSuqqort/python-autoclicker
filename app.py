@@ -1,10 +1,7 @@
-import threading
-import time
 import customtkinter as ctk
 from pynput.mouse import Button, Controller
 from pynput.keyboard import Listener, Key, KeyCode
 from helper import load_settings
-from dataclasses import dataclass
 from models.macro import MacroApp 
 from models.autoclicker import AutoClicker
 from models.settings import Settings
@@ -17,14 +14,13 @@ ctk.set_default_color_theme("blue")  # "blue", "green", "dark-blue"
 class App:
     def __init__(self):
         self.root = ctk.CTk()
-        self.root.title("Auto Clicker")
-        self.root.geometry("600x480")
-        self.root.resizable(False, False)
+        self.root.title("AutoClicker")
+        self.root.geometry("600x450")
 
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
         self.nav_bar = ctk.CTkFrame(self.root,width=120,corner_radius=0)
-        self.nav_bar.grid(row=0, column=0, sticky="ns")
+        self.nav_bar.grid(row=0, column=0, sticky="nsw")
         self.config = load_settings()
         self.current_page = None
 
@@ -57,9 +53,12 @@ class App:
         self.btn_settings.pack(fill="x", padx=10, pady=5)
 
         self.content_frame = ctk.CTkFrame(self.root, corner_radius=0, fg_color="transparent")
+        self.content_frame.grid_rowconfigure(0, weight=1)
+        self.content_frame.grid_columnconfigure(0, weight=1)
         self.content_frame.grid(row=0, column=1, sticky="nsew")
 
         self.autoclicker = AutoClicker(self.content_frame, self.get_config, self.config_change)
+        self.autoclicker.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         self.settings = Settings(self.content_frame, self.get_config, self.config_change)
         self.macro = MacroApp(self.content_frame, self.config)
 
@@ -84,7 +83,8 @@ class App:
             for p in self.pages.values():
                 p.grid_forget()
 
-            target.grid(row=0, column=0, sticky="nsew")
+            target.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+            target.tkraise()
             if hasattr(target, "on_enter"):
                 target.on_enter()
 
@@ -94,25 +94,27 @@ class App:
             print("Page not found or initialized")
             raise
 
-
     def config_change(self, updated: AutoClickerConfig):
         self.config = updated
-        print(f"Config updated: {self.config}")
-
+        self.save_config()
 
     def get_config(self):
         return self.config
 
     def save_config(self):
-        with open("saves/settings.json", "w") as f:
-            for key, value in self.config.__dict__.items():
-                if isinstance(value, Key):
-                    self.config.__dict__[key] = f"Key.{value.name}"
-                if isinstance(value, KeyCode):
-                    self.config.__dict__[key] = value.char
-                if isinstance(value, Button):
-                    self.config.__dict__[key] = f"Button.{value.name}"
-            json.dump(self.config.__dict__, f, indent=4)
+        try:
+            with open("saves/settings.json", "w") as f:
+                for key, value in self.config.__dict__.items():
+                    if isinstance(value, Key):
+                        self.config.__dict__[key] = f"Key.{value.name}"
+                    if isinstance(value, KeyCode):
+                        self.config.__dict__[key] = value.char
+                    if isinstance(value, Button):
+                        self.config.__dict__[key] = f"Button.{value.name}"
+                json.dump(self.config.__dict__, f, indent=4)
+            f.close()
+        except Exception as e:
+            print(f"Failed to save settings: {e}")
         
     def on_close(self):
         for page in self.pages.values():
