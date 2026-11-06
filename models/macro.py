@@ -25,6 +25,8 @@ class MacroApp(ctk.CTkFrame):
         self.event_lock = threading.Lock()
         self.mouse_controller = MouseController()
         self.keyboard_controller = KeyboardController()
+        self.is_repeat = False
+        self.repeat_times = 1
         self.config = config
         self.macro_options = {}
         self.hotkey_bindings = []
@@ -103,8 +105,9 @@ class MacroApp(ctk.CTkFrame):
         )
         self.macro_menu.grid(row=6, column=0, padx=24, pady=(0, 12), sticky="ew")
 
+        # play/delete macro controls
         saved_controls = ctk.CTkFrame(self, fg_color="transparent")
-        saved_controls.grid(row=7, column=0, padx=24, pady=(0, 24), sticky="ew")
+        saved_controls.grid(row=7, column=0, padx=24, pady=(0, 12), sticky="ew")
         saved_controls.grid_columnconfigure((0, 1), weight=1)
 
         self.play_button = ctk.CTkButton(
@@ -126,6 +129,39 @@ class MacroApp(ctk.CTkFrame):
             hover_color=("#a93226", "#7b241c"),
         )
         self.delete_button.grid(row=0, column=1, padx=(6, 0), sticky="ew")
+
+        # Repeat macro controls (in development)
+        repeat_controls = ctk.CTkFrame(self, fg_color="transparent")
+        repeat_controls.grid(row=8, column=0, padx=24, pady=(0, 24), sticky="ew")
+        repeat_controls.grid_columnconfigure((0, 1), weight=1)
+
+        self.repeat_button = ctk.CTkButton(
+            repeat_controls,
+            text="Enable repeat" if not self.is_repeat else "Disable repeat",
+            command=self.toggle_repeat,
+            fg_color="green" if not self.is_repeat else "red",
+            hover_color="green" if not self.is_repeat else "red",
+            height=40,
+        )
+        self.repeat_button.grid(row=0, column=0, padx=(0, 6), sticky="ew")
+
+        self.repeat_times_label = ctk.CTkLabel(
+            repeat_controls,
+            text="Repeat times:",
+            anchor="w",
+            text_color=("gray40", "gray70"),
+        )
+
+        self.repeat_times_label.grid(row=0, column=1, padx=(6, 0), sticky="w")
+
+        self.repeat_times_entry = ctk.CTkEntry(
+            repeat_controls,
+            placeholder_text="Repeat time(s)",
+            height=40,
+        )
+        self.repeat_times_entry.insert(0, str(self.repeat_times))
+        self.repeat_times_entry.grid(row=0, column=2, padx=(6, 0), sticky="ew")
+        self.repeat_times_entry.bind("<FocusOut>", lambda e: self.set_repeat_times())
 
     def set_status(self, message, color=("gray40", "gray70")):
         self.status_label.configure(text=message, text_color=color)
@@ -325,20 +361,29 @@ class MacroApp(ctk.CTkFrame):
         events = self.macros[index].get("events", [])
         self.play_button.configure(state="disabled")
         self.record_button.configure(state="disabled")
-
         self.set_status("Playing macro…", "#2980b9")
-        threading.Thread(
-            target=self.run_macro,
-            args=(events,),
-            daemon=True,
-        ).start()
+
+        repeat_times = self.repeat_times if self.is_repeat else 1
+        print(f"Playing macro {self.macros[index].get('name')} for {repeat_times} time(s).")
+
+        try:
+            threading.Thread(
+                target=self.run_macro,
+                args=(events,repeat_times),
+                daemon=True,
+            ).start()
+        except Exception as error:
+            self.set_status(f"Error during macro playback: {error}", "red")
 
         self.play_button.configure(state="normal")
         self.record_button.configure(state="normal")
 
-    def run_macro(self, events):
+    def run_macro(self, events, repeat_times=1):
         try:
-            self.replay_macro(events)
+            for _ in range(repeat_times):
+                if not self.playing_lock.locked():
+                    break
+                self.replay_macro(events)
         except (KeyError, TypeError, ValueError, OSError) as error:
             print(f"Error during macro playback: {error}")
             message = f"Playback failed: {error}"
@@ -375,6 +420,29 @@ class MacroApp(ctk.CTkFrame):
             else:
                 raise ValueError(f"Unsupported event type: {event_type}")
 
+    def toggle_repeat(self):
+        self.is_repeat = not self.is_repeat
+        self.repeat_button.configure(
+            text="Enable repeat" if not self.is_repeat else "Disable repeat",
+            fg_color="green" if not self.is_repeat else ("#c0392b", "#922b21"),
+            hover_color="green" if not self.is_repeat else ("#a93226", "#7b241c"),
+        )
+        if self.is_repeat:
+            self.set_status("Repeat enabled.", "green")
+        else:
+            self.set_status("Repeat disabled.", "gray")
+    
+    def set_repeat_times(self):
+        try:
+            times = int(self.repeat_times_entry.get().strip())
+            if times < 1:
+                return
+            self.repeat_times = int(times)
+        except ValueError:
+            self.repeat_times_entry.delete(0, "end")
+            self.repeat_times_entry.insert(0, str(self.repeat_times))
+            return 
+
     def delete_selected(self):
         index = self.selected_macro_index()
         if index is None:
@@ -405,7 +473,6 @@ class MacroApp(ctk.CTkFrame):
 
     def on_release(self, key):
         self.append_event(type="key_up", key=key)
-
 
     def on_enter(self):
         if self.recording:

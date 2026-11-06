@@ -15,7 +15,7 @@ class App:
     def __init__(self):
         self.root = ctk.CTk()
         self.root.title("AutoClicker")
-        self.root.geometry("600x450")
+        self.root.geometry("600x500")
 
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
