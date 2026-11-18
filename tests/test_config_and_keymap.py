@@ -10,9 +10,10 @@ def test_config_has_expected_defaults():
 
     assert config.delay == 1.0
     assert config.toggle_hotkey == KeyCode(char="s")
-    assert config.start_record_hotkey == Key.f9
-    assert config.stop_record_hotkey == Key.f10
-    assert config.play_macro_hotkey == Key.f11
+    assert config.start_record_hotkey == Key.f8
+    assert config.stop_record_hotkey == Key.f9
+    assert config.play_macro_hotkey == Key.f10
+    assert config.stop_macro_hotkey == Key.f11
     assert config.delete_macro_hotkey == Key.f12
     assert config.autoclicker_repeat_key is Button.left
 

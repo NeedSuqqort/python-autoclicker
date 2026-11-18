@@ -52,6 +52,7 @@ def make_macro(**kwargs):
     macro.name_entry = FakeWidget()
     macro.stop_button = FakeWidget()
     macro.status_label = FakeWidget()
+    macro.stop_macro_event = threading.Event()
     return macro
 
 

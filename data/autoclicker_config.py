@@ -6,8 +6,9 @@ from pynput.mouse import Button
 class AutoClickerConfig:
     delay: float = 1.0
     toggle_hotkey: Key | KeyCode = KeyCode(char='s')
-    start_record_hotkey: Key | KeyCode = Key.f9
-    stop_record_hotkey: Key | KeyCode = Key.f10
-    play_macro_hotkey: Key | KeyCode = Key.f11
+    start_record_hotkey: Key | KeyCode = Key.f8
+    stop_record_hotkey: Key | KeyCode = Key.f9
+    play_macro_hotkey: Key | KeyCode = Key.f10
+    stop_macro_hotkey: Key | KeyCode = Key.f11
     delete_macro_hotkey: Key | KeyCode = Key.f12
     autoclicker_repeat_key: Button = Button.left

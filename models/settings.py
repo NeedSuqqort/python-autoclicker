@@ -29,6 +29,7 @@ class Settings(ctk.CTkFrame):
             ("Start Record Macro", "start_record_hotkey"),
             ("Stop Record Macro", "stop_record_hotkey"),
             ("Play Macro", "play_macro_hotkey"),
+            ("Stop Macro", "stop_macro_hotkey"),
             ("Delete Macro", "delete_macro_hotkey"),
         ]:
             self.construct_setting_overlay(hotkey_name, hotkey_attr, getattr(self.get_config(), hotkey_attr))

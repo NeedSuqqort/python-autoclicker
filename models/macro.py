@@ -26,6 +26,7 @@ class MacroApp(ctk.CTkFrame):
         self.mouse_controller = MouseController()
         self.keyboard_controller = KeyboardController()
         self.is_repeat = False
+        self.stop_macro_event = threading.Event()
         self.repeat_times = 1
         self.config = config
         self.macro_options = {}
@@ -194,7 +195,10 @@ class MacroApp(ctk.CTkFrame):
     def start_recording(self):
         if self.recording:
             self.stop_recording()
-            return 
+            return
+
+        if self.playing_lock.locked():
+            return
 
         self.recording_name = self.name_entry.get().strip()
         if not self.recording_name:
@@ -357,7 +361,7 @@ class MacroApp(ctk.CTkFrame):
             self.set_status("A replay is in progress. Please wait until it is finished.", "gray")
             return
 
-        self.is_playing = True
+        self.stop_macro_event.clear()
         events = self.macros[index].get("events", [])
         self.play_button.configure(state="disabled")
         self.record_button.configure(state="disabled")
@@ -378,10 +382,14 @@ class MacroApp(ctk.CTkFrame):
         self.play_button.configure(state="normal")
         self.record_button.configure(state="normal")
 
+    def stop_selected(self):
+        if self.playing_lock.locked():
+            self.stop_macro_event.set()
+
     def run_macro(self, events, repeat_times=1):
         try:
             for _ in range(repeat_times):
-                if not self.playing_lock.locked():
+                if not self.playing_lock.locked() or self.stop_macro_event.is_set():
                     break
                 self.replay_macro(events)
         except (KeyError, TypeError, ValueError, OSError) as error:
@@ -398,7 +406,10 @@ class MacroApp(ctk.CTkFrame):
 
     def replay_macro(self, events):
         for event in events:
-            time.sleep(max(0, event.get("delay", 0)))
+            if self.stop_macro_event.wait(max(0, event.get("delay", 0))):
+                return
+            if self.stop_macro_event.is_set():
+                return
             event_type = event["type"]
             if event_type == "move":
                 self.mouse_controller.position = (event["x"], event["y"])
@@ -444,6 +455,13 @@ class MacroApp(ctk.CTkFrame):
             return 
 
     def delete_selected(self):
+        if self.playing_lock.locked():
+            self.set_status("Please stop the macro before deletion.", "red")
+            return
+        if self.recording:
+            self.set_status("Please stop the macro before deletion.", "red")
+            return
+        
         index = self.selected_macro_index()
         if index is None:
             return
@@ -474,6 +492,9 @@ class MacroApp(ctk.CTkFrame):
     def on_release(self, key):
         self.append_event(type="key_up", key=key)
 
+    def on_hold(self, key):
+        self.append_event(type="key_hold", key=key)
+
     def on_enter(self):
         if self.recording:
             self.stop_recording()
@@ -483,6 +504,7 @@ class MacroApp(ctk.CTkFrame):
             (self.config.start_record_hotkey, self.start_recording),
             (self.config.stop_record_hotkey, self.stop_recording),
             (self.config.play_macro_hotkey, self.play_selected),
+            (self.config.stop_macro_hotkey, self.stop_selected),
             (self.config.delete_macro_hotkey, self.delete_selected),
         )
 
