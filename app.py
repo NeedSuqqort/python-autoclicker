@@ -102,16 +102,17 @@ class App:
         return self.config
 
     def save_config(self):
+        saving_config = {}
         try:
             with open("saves/settings.json", "w") as f:
                 for key, value in self.config.__dict__.items():
                     if isinstance(value, Key):
-                        self.config.__dict__[key] = f"Key.{value.name}"
+                        saving_config[key] = f"Key.{value.name}"
                     if isinstance(value, KeyCode):
-                        self.config.__dict__[key] = value.char
+                        saving_config[key] = value.char
                     if isinstance(value, Button):
-                        self.config.__dict__[key] = f"Button.{value.name}"
-                json.dump(self.config.__dict__, f, indent=4)
+                        saving_config[key] = f"Button.{value.name}"
+                json.dump(saving_config, f, indent=4)
             f.close()
         except Exception as e:
             print(f"Failed to save settings: {e}")
