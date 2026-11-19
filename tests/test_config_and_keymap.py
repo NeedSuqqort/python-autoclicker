@@ -17,7 +17,6 @@ def test_config_has_expected_defaults():
     assert config.delete_macro_hotkey == Key.f12
     assert config.autoclicker_repeat_key is Button.left
 
-
 def test_keymap_converts_special_keys_and_function_keys():
     assert pynput_to_tkinter(Key.space) == "space"
     assert pynput_to_tkinter(Key.enter) == "Return"

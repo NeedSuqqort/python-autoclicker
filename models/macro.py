@@ -1,15 +1,14 @@
 import json
 import threading
 import time
-from pathlib import Path
-
 import customtkinter as ctk
+import functools
+
+from pathlib import Path
 from pynput import keyboard, mouse
-from pynput.keyboard import Controller as KeyboardController
-from pynput.keyboard import Key, KeyCode
+from pynput.keyboard import Key, KeyCode, GlobalHotKeys, Controller as KeyboardController
 from pynput.mouse import Button, Controller as MouseController
 from data.keymap import pynput_to_tkinter
-
 class MacroApp(ctk.CTkFrame):
     def __init__(self, master, config):
         super().__init__(master, corner_radius=12)
@@ -233,7 +232,7 @@ class MacroApp(ctk.CTkFrame):
         self.stop_button.configure(state="normal")
         self.set_status("Recording mouse and keyboard actions…", "#d35400")
 
-    def stop_recording(self):
+    def stop_recording(self, mouse_triggered=False):
         if not self.recording:
             self.status_label.configure(text="Not currently recording.", text_color="gray")
             return
@@ -255,6 +254,10 @@ class MacroApp(ctk.CTkFrame):
         if not events:
             self.set_status("No actions recorded.", "gray")
             return
+
+        if mouse_triggered:
+            # remove the last action triggered by clicking the "Stop and save" button
+            events.pop()
 
         self.create_macro(self.recording_name, events)
         try:
@@ -442,7 +445,7 @@ class MacroApp(ctk.CTkFrame):
             self.set_status("Repeat enabled.", "green")
         else:
             self.set_status("Repeat disabled.", "gray")
-    
+   
     def set_repeat_times(self):
         try:
             times = int(self.repeat_times_entry.get().strip())
@@ -452,7 +455,7 @@ class MacroApp(ctk.CTkFrame):
         except ValueError:
             self.repeat_times_entry.delete(0, "end")
             self.repeat_times_entry.insert(0, str(self.repeat_times))
-            return 
+            return
 
     def delete_selected(self):
         if self.playing_lock.locked():
@@ -461,7 +464,7 @@ class MacroApp(ctk.CTkFrame):
         if self.recording:
             self.set_status("Please stop the macro before deletion.", "red")
             return
-        
+       
         index = self.selected_macro_index()
         if index is None:
             return
@@ -473,6 +476,15 @@ class MacroApp(ctk.CTkFrame):
         else:
             self.set_status("Macro deleted.", "green")
         self.refresh_macro_list(index)
+
+    def check_event_is_triggered_by_hotkey(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            pressed_key, _ = args
+            if pressed_key is not None and pressed_key in set(self.config.__dict__.values()):
+                return
+            return func(self, *args, **kwargs)
+        return wrapper
 
     def on_move(self, x, y):
         self.append_event(type="move", x=x, y=y)
@@ -486,48 +498,40 @@ class MacroApp(ctk.CTkFrame):
             pressed=pressed,
         )
 
-    def on_press(self, key):
+    @check_event_is_triggered_by_hotkey
+    def on_press(self, key, injected=False):
         self.append_event(type="key_down", key=key)
 
-    def on_release(self, key):
+    @check_event_is_triggered_by_hotkey
+    def on_release(self, key, injected=False):
         self.append_event(type="key_up", key=key)
-
-    def on_hold(self, key):
-        self.append_event(type="key_hold", key=key)
 
     def on_enter(self):
         if self.recording:
             self.stop_recording()
-
-        window = self.winfo_toplevel()
-        hotkeys = (
+        
+        hotkey_mappings = [
             (self.config.start_record_hotkey, self.start_recording),
             (self.config.stop_record_hotkey, self.stop_recording),
             (self.config.play_macro_hotkey, self.play_selected),
             (self.config.stop_macro_hotkey, self.stop_selected),
             (self.config.delete_macro_hotkey, self.delete_selected),
-        )
+        ]
 
-        for hotkey, callback in hotkeys:
-            sequence = f"<KeyPress-{pynput_to_tkinter(hotkey)}>"
+        cbs = {}
 
-            def handle_hotkey(_event, command=callback):
-                command()
-                return "break"
+        for hotkey, callback in hotkey_mappings:
+            sequence = f"{pynput_to_tkinter(hotkey)}"
+            cbs[sequence] = callback
 
-            binding_id = window.bind(sequence, handle_hotkey, add="+")
-            self.hotkey_bindings.append((sequence, binding_id))
+        self.hotkey_bindings = GlobalHotKeys(cbs)
+        self.hotkey_bindings.start()
 
     def on_exit(self):
         if self.recording:
             self.stop_recording()
         self.recording = False
-
-        window = self.winfo_toplevel()
-        for sequence, binding_id in self.hotkey_bindings:
-            window.unbind(sequence, binding_id)
-        self.hotkey_bindings.clear()
-
+        self.hotkey_bindings.stop()
 
 if __name__ == "__main__":
     ctk.set_appearance_mode("System")
